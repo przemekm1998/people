@@ -1,10 +1,9 @@
 from datetime import date
 from unittest import mock
-from unittest.mock import patch
 
 import pytest
 
-from src.people.domain_models.models import Person, Date, Name
+from src.people.domain_models.models import Person, Date, Name, LoginInfo
 
 
 class FakeDate(date):
@@ -65,3 +64,37 @@ def test_create_name_from_dict():
     assert new_name.title == name_info['title']
     assert new_name.first_name == name_info['first_name']
     assert new_name.second_name == name_info['second_name']
+
+
+@pytest.mark.parametrize('password, points', [
+    ('supertajne', 6),  # Lower-case and 8+ chars
+    ('Ab1337', 4),  # Upper-case, lower-case and number
+    ('Ab133785', 9),  # Upper-case, lower-case, number, 8+ chars
+    ('Ab133785%', 12),  # All rules match
+    ('', 0)
+])
+def test_login_info_password_strength(password, points):
+    login_info = LoginInfo(uuid='', username='', password=password, salt='', md5='',
+                           sha1='', sha256='')
+
+    assert login_info.password_strength == points
+
+
+def test_login_info_from_dict():
+    login_info_dict = dict(uuid='uuid',
+                           username='username',
+                           password='passwd',
+                           salt='salt',
+                           md5='md5',
+                           sha1='sha1',
+                           sha256='sha256')
+
+    login_info = LoginInfo.from_dict(login_info_dict)
+
+    assert login_info.uuid == login_info_dict['uuid']
+    assert login_info.username == login_info_dict['username']
+    assert login_info.password == login_info_dict['password']
+    assert login_info.salt == login_info_dict['salt']
+    assert login_info.md5 == login_info_dict['md5']
+    assert login_info.sha1 == login_info_dict['sha1']
+    assert login_info.sha256 == login_info_dict['sha256']

@@ -1,8 +1,9 @@
 """ Domain models used throughout the app """
 
 import datetime
+import re
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Any
 
 
 class Person:
@@ -92,10 +93,77 @@ class Name:
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, str]):
-        """ Generate class from dict """
+        """
+        Generate class instance from dictionary
+        :param dictionary: Dictionary with information to instantiate class
+        :return: Instance of class
+        """
 
         return cls(
             title=dictionary['title'],
             first_name=dictionary['first_name'],
             second_name=dictionary['second_name']
+        )
+
+
+@dataclass
+class LoginInfo:
+    """ Class to store login information """
+
+    REGEX_RULES = (
+        dict(rule='[a-z]+', points=1),  # At least one smaller-case letter
+        dict(rule='[A-Z]+', points=2),  # At least one upper-case letter
+        dict(rule='[0-9]+', points=1),  # At least one number
+        dict(rule='.{8,}', points=5),  # At least 8 characters
+        dict(rule='[!@#$%^&*(),.?\":{}|<>]', points=3)  # At least one special char
+    )
+
+    uuid: str
+    username: str
+    password: str
+    salt: str
+    md5: str
+    sha1: str
+    sha256: str
+
+    @property
+    def password_strength(self):
+        """ Calculate password strength """
+
+        strength = 0
+
+        for pattern in self.REGEX_RULES:
+            strength += self._give_points_if_password_matches_regex(pattern)
+
+        return strength
+
+    def _give_points_if_password_matches_regex(self, pattern: Dict[str, Any]):
+        """
+        Checking if password matches given regex expression
+        :param pattern: Regex pattern to check
+        :return: 0 if no match or points for a given rule if regex rule match password
+        """
+
+        regex_expression = re.compile(pattern['rule'])
+        if regex_expression.search(self.password):
+            return pattern['points']
+        else:
+            return 0
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, str]):
+        """
+        Generate class instance from dictionary
+        :param dictionary: Dictionary with information to instantiate class
+        :return: Instance of class
+        """
+
+        return cls(
+            uuid=dictionary['uuid'],
+            username=dictionary['username'],
+            password=dictionary['password'],
+            salt=dictionary['salt'],
+            md5=dictionary['md5'],
+            sha1=dictionary['sha1'],
+            sha256=dictionary['sha256']
         )
