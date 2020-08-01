@@ -1,17 +1,16 @@
 """ Domain models used throughout the app """
 
 import datetime
+from dataclasses import dataclass
+from typing import Dict
 
 
 class Person:
     """ Class to keep track of every person info """
 
-    def __init__(self, gender: str, title: str, first_name: str, second_name: str,
-                 date_of_birth: datetime.date):
+    def __init__(self, gender: str, name: 'Name', date_of_birth: datetime.date):
         self.gender = gender
-        self.title = title
-        self.first_name = first_name
-        self.second_name = second_name
+        self.name = name
         self.date_of_birth = Date(date_of_birth)
 
     @property
@@ -80,4 +79,23 @@ class Date:
                 (today.month == self.date.month and
                  today.day > self.date.day) or
                 (today.month > self.date.month)
+        )
+
+
+@dataclass
+class Name:
+    """ Class to store name information """
+
+    title: str
+    first_name: str
+    second_name: str
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, str]):
+        """ Generate class from dict """
+
+        return cls(
+            title=dictionary['title'],
+            first_name=dictionary['first_name'],
+            second_name=dictionary['second_name']
         )

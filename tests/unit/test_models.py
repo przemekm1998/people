@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from src.people.domain_models.models import Person, Date
+from src.people.domain_models.models import Person, Date, Name
 
 
 class FakeDate(date):
@@ -56,3 +56,12 @@ def test_person_days_until_birthday():
     FakeDate.today = classmethod(lambda cls: date(2020, 7, 31))
     person = FakePerson(date_of_birth=date.fromisoformat('1993-08-01'))
     assert person.days_to_birthday == 1
+
+
+def test_create_name_from_dict():
+    name_info = dict(title='mr', first_name='John', second_name='Doe')
+    new_name = Name.from_dict(name_info)
+
+    assert new_name.title == name_info['title']
+    assert new_name.first_name == name_info['first_name']
+    assert new_name.second_name == name_info['second_name']
