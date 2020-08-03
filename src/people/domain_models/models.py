@@ -6,6 +6,19 @@ from dataclasses import dataclass
 from typing import Dict, Any
 
 
+@dataclass
+class UserInfo:
+    """ Class to compose full user info """
+
+    person_info: 'Person'
+    location: 'Location'
+    login_info: 'LoginInfo'
+    date_registered: 'Date'
+    personal_id: 'PersonalId'
+    contact_info: 'ContactInfo'
+    nat: str
+
+
 class Person:
     """ Class to keep track of every person info """
 
@@ -188,3 +201,67 @@ class PhoneNumber:
 
     def __repr__(self) -> str:
         return self.number
+
+
+@dataclass
+class ContactInfo:
+    """ Class to store contact information """
+
+    phone: PhoneNumber
+    cell: PhoneNumber
+    email: str
+
+
+@dataclass
+class Location:
+    """ Class to store location information """
+
+    street: str
+    city: str
+    state: str
+    postcode: str
+    coordinates: 'Coordinates'
+    timezone: 'Timezone'
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, Any]):
+        coordinates = Coordinates.from_dict(dictionary['coordinates'])
+        timezone = Timezone.from_dict(dictionary['timezone'])
+        return cls(
+            street=dictionary['street'],
+            city=dictionary['city'],
+            state=dictionary['state'],
+            postcode=dictionary['postcode'],
+            coordinates=coordinates,
+            timezone=timezone
+        )
+
+
+@dataclass
+class Coordinates:
+    """ Class to store info about coordinates """
+
+    latitude: float
+    longitude: float
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, str]):
+        return cls(
+            latitude=float(dictionary['latitude']),
+            longitude=float(dictionary['longitude'])
+        )
+
+
+@dataclass
+class Timezone:
+    """ Class to store info about timezone """
+
+    offset: str
+    description: str
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, str]):
+        return cls(
+            offset=dictionary['offset'],
+            description=dictionary['description']
+        )
