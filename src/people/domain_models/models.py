@@ -15,11 +15,11 @@ class Person:
         self.date_of_birth = Date(date_of_birth)
 
     @property
-    def age(self):
+    def age(self) -> int:
         return self.date_of_birth.calculate_age()
 
     @property
-    def days_to_birthday(self):
+    def days_to_birthday(self) -> int:
         return self.date_of_birth.days_to_anniversary()
 
 
@@ -30,18 +30,18 @@ class Date:
         self.date = date_str
 
     @property
-    def day(self):
+    def day(self) -> int:
         return self.date.day
 
     @property
-    def month(self):
+    def month(self) -> int:
         return self.date.month
 
     @property
-    def year(self):
+    def year(self) -> int:
         return self.date.year
 
-    def calculate_age(self):
+    def calculate_age(self) -> int:
         """
         Calculate years from self date until today
         :return years: Years difference
@@ -54,7 +54,7 @@ class Date:
 
         return years
 
-    def days_to_anniversary(self):
+    def days_to_anniversary(self) -> int:
         """ Calculate days left to anniversary """
 
         today = datetime.date.today()
@@ -69,7 +69,7 @@ class Date:
 
         return (anniversary_date - today).days
 
-    def _had_anniversary_this_year(self, today: datetime.date):
+    def _had_anniversary_this_year(self, today: datetime.date) -> bool:
         """
         Check if anniversary already happened this year
         :param today: Today's date
@@ -92,7 +92,7 @@ class Name:
     second_name: str
 
     @classmethod
-    def from_dict(cls, dictionary: Dict[str, str]):
+    def from_dict(cls, dictionary: Dict[str, str]) -> 'Name':
         """
         Generate class instance from dictionary
         :param dictionary: Dictionary with information to instantiate class
@@ -127,7 +127,7 @@ class LoginInfo:
     sha256: str
 
     @property
-    def password_strength(self):
+    def password_strength(self) -> int:
         """ Calculate password strength """
 
         strength = 0
@@ -137,7 +137,7 @@ class LoginInfo:
 
         return strength
 
-    def _give_points_if_password_matches_regex(self, pattern: Dict[str, Any]):
+    def _give_points_if_password_matches_regex(self, pattern: Dict[str, Any]) -> int:
         """
         Checking if password matches given regex expression
         :param pattern: Regex pattern to check
@@ -151,7 +151,7 @@ class LoginInfo:
             return 0
 
     @classmethod
-    def from_dict(cls, dictionary: Dict[str, str]):
+    def from_dict(cls, dictionary: Dict[str, str]) -> 'LoginInfo':
         """
         Generate class instance from dictionary
         :param dictionary: Dictionary with information to instantiate class
@@ -167,3 +167,24 @@ class LoginInfo:
             sha1=dictionary['sha1'],
             sha256=dictionary['sha256']
         )
+
+
+class PhoneNumber:
+    """ Class to store and correctly parse phone numbers """
+
+    def __init__(self, phone_num: str):
+        self.number = phone_num
+
+    @property
+    def number(self) -> str:
+        return self._phone_num
+
+    @number.setter
+    def number(self, new_num: str):
+        self._set_number(new_num)
+
+    def _set_number(self, new_num: str):
+        self._phone_num = new_num.replace('-', '')
+
+    def __repr__(self) -> str:
+        return self.number
