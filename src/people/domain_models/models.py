@@ -117,6 +117,7 @@ class Date:
     def __eq__(self, other: 'Date'):
         return self.date == other.date
 
+
 @dataclass
 class Name:
     """ Class to store name information """
