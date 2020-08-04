@@ -5,9 +5,22 @@ import re
 from dataclasses import dataclass
 from typing import Dict, Any
 
+from src.people.domain_models.exceptions import ModelCreationException
 
-class ModelCreationException(Exception):
-    pass
+
+class User:
+    """ Composition of data needed for single user """
+
+    def __init__(self, person: 'Person', location: 'Location',
+                 login_info: 'LoginInfo', contact_info: 'ContactInfo',
+                 date_registered: str, personal_id: 'PersonalId', nat: str):
+        self.person = person
+        self.location = location
+        self.login_info = login_info
+        self.contact_info = contact_info
+        self.date_registered = Date(date_registered)
+        self.personal_id = personal_id
+        self.nat = nat
 
 
 class Person:
@@ -101,6 +114,8 @@ class Date:
                 (today.month > self.date.month)
         )
 
+    def __eq__(self, other: 'Date'):
+        return self.date == other.date
 
 @dataclass
 class Name:
@@ -261,6 +276,11 @@ class Coordinates:
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, str]):
+        """
+        Generate class instance from dictionary
+        :param dictionary: Dictionary with information to instantiate class
+        :return: Instance of class
+        """
 
         float_cords = Coordinates._convert_cords_from_str_to_float(dictionary)
 
@@ -272,6 +292,11 @@ class Coordinates:
     @staticmethod
     def _convert_cords_from_str_to_float(dictionary: Dict[str, str]) \
             -> Dict[str, float]:
+        """
+        Converting string values from dict to float
+        :param dictionary: Dictionary with coordinates info
+        :return: New dictionary with flaot coordinates
+        """
 
         float_cords = dict()
         try:
@@ -295,6 +320,12 @@ class Timezone:
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, str]):
+        """
+        Generate class instance from dictionary
+        :param dictionary: Dictionary with information to instantiate class
+        :return: Instance of class
+        """
+
         try:
             return cls(
                 offset=dictionary['offset'],
@@ -302,3 +333,27 @@ class Timezone:
             )
         except KeyError as err:
             raise ModelCreationException(f'Timezone info not complete: {str(err)}')
+
+
+@dataclass
+class PersonalId:
+    """ Class to store information about id """
+
+    name: str
+    value: str
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, str]) -> 'PersonalId':
+        """
+        Generate class instance from dictionary
+        :param dictionary: Dictionary with information to instantiate class
+        :return: Instance of class
+        """
+
+        try:
+            return cls(
+                name=dictionary['name'],
+                value=dictionary['value']
+            )
+        except KeyError:
+            raise ModelCreationException('PersonalId information not complete')

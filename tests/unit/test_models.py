@@ -3,8 +3,9 @@ from unittest import mock
 
 import pytest
 
+from src.people.domain_models.exceptions import ModelCreationException
 from src.people.domain_models.models import Person, Date, Name, LoginInfo, PhoneNumber, \
-    Location, ModelCreationException, Coordinates
+    Location, Coordinates
 
 
 class FakeDate(date):
