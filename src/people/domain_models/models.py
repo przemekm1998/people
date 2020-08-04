@@ -5,43 +5,75 @@ import re
 from dataclasses import dataclass
 from typing import Dict, Any
 
+from src.people.domain_models.exceptions import ModelCreationException
+
+
+class User:
+    """ Composition of data needed for single user """
+
+    def __init__(self, person: 'Person', location: 'Location',
+                 login_info: 'LoginInfo', contact_info: 'ContactInfo',
+                 date_registered: str, personal_id: 'PersonalId', nat: str):
+        self.person = person
+        self.location = location
+        self.login_info = login_info
+        self.contact_info = contact_info
+        self.date_registered = Date(date_registered)
+        self.personal_id = personal_id
+        self.nat = nat
+
 
 class Person:
     """ Class to keep track of every person info """
 
-    def __init__(self, gender: str, name: 'Name', date_of_birth: datetime.date):
+    def __init__(self, gender: str, name: 'Name', date_of_birth: str):
         self.gender = gender
         self.name = name
         self.date_of_birth = Date(date_of_birth)
 
     @property
-    def age(self):
+    def age(self) -> int:
         return self.date_of_birth.calculate_age()
 
     @property
-    def days_to_birthday(self):
+    def days_to_birthday(self) -> int:
         return self.date_of_birth.days_to_anniversary()
 
 
 class Date:
     """ Class to store info about dates """
 
-    def __init__(self, date_str: datetime.date):
+    def __init__(self, date_str: str):
         self.date = date_str
 
     @property
-    def day(self):
+    def date(self) -> datetime.date:
+        return self._date
+
+    @date.setter
+    def date(self, new_date: str):
+        self._convert_to_date(new_date)
+
+    def _convert_to_date(self, new_date: str):
+        try:
+            self._date = datetime.date.fromisoformat(new_date)
+        except ValueError:
+            raise ModelCreationException(f"Inappropriate date format given: "
+                                         f"{new_date}, need ISO format")
+
+    @property
+    def day(self) -> int:
         return self.date.day
 
     @property
-    def month(self):
+    def month(self) -> int:
         return self.date.month
 
     @property
-    def year(self):
+    def year(self) -> int:
         return self.date.year
 
-    def calculate_age(self):
+    def calculate_age(self) -> int:
         """
         Calculate years from self date until today
         :return years: Years difference
@@ -54,7 +86,7 @@ class Date:
 
         return years
 
-    def days_to_anniversary(self):
+    def days_to_anniversary(self) -> int:
         """ Calculate days left to anniversary """
 
         today = datetime.date.today()
@@ -69,7 +101,7 @@ class Date:
 
         return (anniversary_date - today).days
 
-    def _had_anniversary_this_year(self, today: datetime.date):
+    def _had_anniversary_this_year(self, today: datetime.date) -> bool:
         """
         Check if anniversary already happened this year
         :param today: Today's date
@@ -82,6 +114,8 @@ class Date:
                 (today.month > self.date.month)
         )
 
+    def __eq__(self, other: 'Date'):
+        return self.date == other.date
 
 @dataclass
 class Name:
@@ -92,18 +126,21 @@ class Name:
     second_name: str
 
     @classmethod
-    def from_dict(cls, dictionary: Dict[str, str]):
+    def from_dict(cls, dictionary: Dict[str, str]) -> 'Name':
         """
         Generate class instance from dictionary
         :param dictionary: Dictionary with information to instantiate class
         :return: Instance of class
         """
 
-        return cls(
-            title=dictionary['title'],
-            first_name=dictionary['first_name'],
-            second_name=dictionary['second_name']
-        )
+        try:
+            return cls(
+                title=dictionary['title'],
+                first_name=dictionary['first_name'],
+                second_name=dictionary['second_name']
+            )
+        except KeyError:
+            raise ModelCreationException("Name information not complete")
 
 
 @dataclass
@@ -127,7 +164,7 @@ class LoginInfo:
     sha256: str
 
     @property
-    def password_strength(self):
+    def password_strength(self) -> int:
         """ Calculate password strength """
 
         strength = 0
@@ -137,7 +174,7 @@ class LoginInfo:
 
         return strength
 
-    def _give_points_if_password_matches_regex(self, pattern: Dict[str, Any]):
+    def _give_points_if_password_matches_regex(self, pattern: Dict[str, Any]) -> int:
         """
         Checking if password matches given regex expression
         :param pattern: Regex pattern to check
@@ -151,6 +188,93 @@ class LoginInfo:
             return 0
 
     @classmethod
+    def from_dict(cls, dictionary: Dict[str, str]) -> 'LoginInfo':
+        """
+        Generate class instance from dictionary
+        :param dictionary: Dictionary with information to instantiate class
+        :return: Instance of class
+        """
+
+        try:
+            return cls(
+                uuid=dictionary['uuid'],
+                username=dictionary['username'],
+                password=dictionary['password'],
+                salt=dictionary['salt'],
+                md5=dictionary['md5'],
+                sha1=dictionary['sha1'],
+                sha256=dictionary['sha256']
+            )
+        except KeyError:
+            raise ModelCreationException('LoginInfo information not complete')
+
+
+class PhoneNumber:
+    """ Class to store and correctly parse phone numbers """
+
+    def __init__(self, phone_num: str):
+        self.number = phone_num
+
+    @property
+    def number(self) -> str:
+        return self._phone_num
+
+    @number.setter
+    def number(self, new_num: str):
+        self._set_number(new_num)
+
+    def _set_number(self, new_num: str):
+        self._phone_num = new_num.replace('-', '')
+
+    def __repr__(self) -> str:
+        return self.number
+
+
+@dataclass
+class ContactInfo:
+    """ Class to store contact information """
+
+    phone: PhoneNumber
+    cell: PhoneNumber
+    email: str
+
+
+@dataclass
+class Location:
+    """ Class to store location information """
+
+    street: str
+    city: str
+    state: str
+    postcode: str
+    coordinates: 'Coordinates'
+    timezone: 'Timezone'
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, Any]):
+        coordinates = Coordinates.from_dict(dictionary['coordinates'])
+        timezone = Timezone.from_dict(dictionary['timezone'])
+        try:
+            return cls(
+                street=dictionary['street'],
+                city=dictionary['city'],
+                state=dictionary['state'],
+                postcode=dictionary['postcode'],
+                coordinates=coordinates,
+                timezone=timezone
+            )
+        except KeyError:
+            raise ModelCreationException("Location info not complete")
+
+
+@dataclass
+class Coordinates:
+    """ Class to store info about coordinates """
+
+    latitude: float
+    longitude: float
+
+    @classmethod
     def from_dict(cls, dictionary: Dict[str, str]):
         """
         Generate class instance from dictionary
@@ -158,12 +282,78 @@ class LoginInfo:
         :return: Instance of class
         """
 
+        float_cords = Coordinates._convert_cords_from_str_to_float(dictionary)
+
         return cls(
-            uuid=dictionary['uuid'],
-            username=dictionary['username'],
-            password=dictionary['password'],
-            salt=dictionary['salt'],
-            md5=dictionary['md5'],
-            sha1=dictionary['sha1'],
-            sha256=dictionary['sha256']
+            latitude=float_cords['latitude'],
+            longitude=float_cords['longitude']
         )
+
+    @staticmethod
+    def _convert_cords_from_str_to_float(dictionary: Dict[str, str]) \
+            -> Dict[str, float]:
+        """
+        Converting string values from dict to float
+        :param dictionary: Dictionary with coordinates info
+        :return: New dictionary with flaot coordinates
+        """
+
+        float_cords = dict()
+        try:
+            float_cords['latitude'] = float(dictionary['latitude'])
+            float_cords['longitude'] = float(dictionary['longitude'])
+
+            return float_cords
+        except ValueError as err:
+            raise ModelCreationException(
+                f"Inappropriate coordinates format {str(err)}")
+        except KeyError as err:
+            raise ModelCreationException(f'Coordinates info not complete: {str(err)}')
+
+
+@dataclass
+class Timezone:
+    """ Class to store info about timezone """
+
+    offset: str
+    description: str
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, str]):
+        """
+        Generate class instance from dictionary
+        :param dictionary: Dictionary with information to instantiate class
+        :return: Instance of class
+        """
+
+        try:
+            return cls(
+                offset=dictionary['offset'],
+                description=dictionary['description']
+            )
+        except KeyError as err:
+            raise ModelCreationException(f'Timezone info not complete: {str(err)}')
+
+
+@dataclass
+class PersonalId:
+    """ Class to store information about id """
+
+    name: str
+    value: str
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, str]) -> 'PersonalId':
+        """
+        Generate class instance from dictionary
+        :param dictionary: Dictionary with information to instantiate class
+        :return: Instance of class
+        """
+
+        try:
+            return cls(
+                name=dictionary['name'],
+                value=dictionary['value']
+            )
+        except KeyError:
+            raise ModelCreationException('PersonalId information not complete')
