@@ -6,23 +6,14 @@ from dataclasses import dataclass
 from typing import Dict, Any
 
 
-@dataclass
-class UserInfo:
-    """ Class to compose full user info """
-
-    person_info: 'Person'
-    location: 'Location'
-    login_info: 'LoginInfo'
-    date_registered: 'Date'
-    personal_id: 'PersonalId'
-    contact_info: 'ContactInfo'
-    nat: str
+class ModelCreationException(Exception):
+    pass
 
 
 class Person:
     """ Class to keep track of every person info """
 
-    def __init__(self, gender: str, name: 'Name', date_of_birth: datetime.date):
+    def __init__(self, gender: str, name: 'Name', date_of_birth: str):
         self.gender = gender
         self.name = name
         self.date_of_birth = Date(date_of_birth)
@@ -39,8 +30,23 @@ class Person:
 class Date:
     """ Class to store info about dates """
 
-    def __init__(self, date_str: datetime.date):
+    def __init__(self, date_str: str):
         self.date = date_str
+
+    @property
+    def date(self) -> datetime.date:
+        return self._date
+
+    @date.setter
+    def date(self, new_date: str):
+        self._convert_to_date(new_date)
+
+    def _convert_to_date(self, new_date: str):
+        try:
+            self._date = datetime.date.fromisoformat(new_date)
+        except ValueError:
+            raise ModelCreationException(f"Inappropriate date format given: "
+                                         f"{new_date}, need ISO format")
 
     @property
     def day(self) -> int:
@@ -112,11 +118,14 @@ class Name:
         :return: Instance of class
         """
 
-        return cls(
-            title=dictionary['title'],
-            first_name=dictionary['first_name'],
-            second_name=dictionary['second_name']
-        )
+        try:
+            return cls(
+                title=dictionary['title'],
+                first_name=dictionary['first_name'],
+                second_name=dictionary['second_name']
+            )
+        except KeyError:
+            raise ModelCreationException("Name information not complete")
 
 
 @dataclass
@@ -171,15 +180,18 @@ class LoginInfo:
         :return: Instance of class
         """
 
-        return cls(
-            uuid=dictionary['uuid'],
-            username=dictionary['username'],
-            password=dictionary['password'],
-            salt=dictionary['salt'],
-            md5=dictionary['md5'],
-            sha1=dictionary['sha1'],
-            sha256=dictionary['sha256']
-        )
+        try:
+            return cls(
+                uuid=dictionary['uuid'],
+                username=dictionary['username'],
+                password=dictionary['password'],
+                salt=dictionary['salt'],
+                md5=dictionary['md5'],
+                sha1=dictionary['sha1'],
+                sha256=dictionary['sha256']
+            )
+        except KeyError:
+            raise ModelCreationException('LoginInfo information not complete')
 
 
 class PhoneNumber:
@@ -227,14 +239,17 @@ class Location:
     def from_dict(cls, dictionary: Dict[str, Any]):
         coordinates = Coordinates.from_dict(dictionary['coordinates'])
         timezone = Timezone.from_dict(dictionary['timezone'])
-        return cls(
-            street=dictionary['street'],
-            city=dictionary['city'],
-            state=dictionary['state'],
-            postcode=dictionary['postcode'],
-            coordinates=coordinates,
-            timezone=timezone
-        )
+        try:
+            return cls(
+                street=dictionary['street'],
+                city=dictionary['city'],
+                state=dictionary['state'],
+                postcode=dictionary['postcode'],
+                coordinates=coordinates,
+                timezone=timezone
+            )
+        except KeyError:
+            raise ModelCreationException("Location info not complete")
 
 
 @dataclass
@@ -246,10 +261,29 @@ class Coordinates:
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, str]):
+
+        float_cords = Coordinates._convert_cords_from_str_to_float(dictionary)
+
         return cls(
-            latitude=float(dictionary['latitude']),
-            longitude=float(dictionary['longitude'])
+            latitude=float_cords['latitude'],
+            longitude=float_cords['longitude']
         )
+
+    @staticmethod
+    def _convert_cords_from_str_to_float(dictionary: Dict[str, str]) \
+            -> Dict[str, float]:
+
+        float_cords = dict()
+        try:
+            float_cords['latitude'] = float(dictionary['latitude'])
+            float_cords['longitude'] = float(dictionary['longitude'])
+
+            return float_cords
+        except ValueError as err:
+            raise ModelCreationException(
+                f"Inappropriate coordinates format {str(err)}")
+        except KeyError as err:
+            raise ModelCreationException(f'Coordinates info not complete: {str(err)}')
 
 
 @dataclass
@@ -261,7 +295,10 @@ class Timezone:
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, str]):
-        return cls(
-            offset=dictionary['offset'],
-            description=dictionary['description']
-        )
+        try:
+            return cls(
+                offset=dictionary['offset'],
+                description=dictionary['description']
+            )
+        except KeyError as err:
+            raise ModelCreationException(f'Timezone info not complete: {str(err)}')
