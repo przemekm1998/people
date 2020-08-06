@@ -5,15 +5,20 @@ from sqlalchemy import (
 from sqlalchemy.orm import mapper, relationship
 
 from src.people.domain_models.models import Timezone, Coordinates, Location, User, \
-    Person, LoginInfo, ContactInfo, PersonalId
+    Person, ContactInfo, PersonalId, Nat
 
 metadata = MetaData()
 
 user = Table(
     'user', metadata,
-    Column('id', Integer, primary_key=True, autoincrement=True),
+    Column('uuid', String, primary_key=True),
+    Column('username', String(50)),
+    Column('password', String),
+    Column('salt', String),
+    Column('md5', String),
+    Column('sha1', String),
+    Column('sha256', String),
     Column('date_registered', Date),
-    Column('nat', String(50))
 )
 
 person = Table(
@@ -24,20 +29,7 @@ person = Table(
     Column('first_name', String(50)),
     Column('second_name', String(50)),
     Column('date_of_birth', Date),
-    Column('user_id', Integer, ForeignKey('user.id'))
-)
-
-login_info = Table(
-    'login_info', metadata,
-    Column('id', Integer, primary_key=True, autoincrement=True),
-    Column('uuid', String),
-    Column('username', String(50)),
-    Column('password', String),
-    Column('salt', String),
-    Column('md5', String),
-    Column('sha1', String),
-    Column('sha256', String),
-    Column('user_id', Integer, ForeignKey('user.id'))
+    Column('user_uuid', Integer, ForeignKey('user.uuid'))
 )
 
 contact_info = Table(
@@ -46,7 +38,7 @@ contact_info = Table(
     Column('phone', String),
     Column('cell', String),
     Column('email', String),
-    Column('user_id', Integer, ForeignKey('user.id'))
+    Column('user_uuid', Integer, ForeignKey('user.uuid'))
 )
 
 timezone = Table(
@@ -63,6 +55,12 @@ coordinates = Table(
     Column('longitude', Float),
 )
 
+nat = Table(
+    'nat', metadata,
+    Column('id', Integer, primary_key=True, autoincrement=True),
+    Column('name', String(2), unique=True)
+)
+
 location = Table(
     'location', metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
@@ -72,7 +70,8 @@ location = Table(
     Column('postcode', String(5)),
     Column('timezone_id', Integer, ForeignKey('timezone.id')),
     Column('coordinates_id', Integer, ForeignKey('coordinates.id')),
-    Column('user_id', Integer, ForeignKey('user.id'))
+    Column('nat_id', Integer, ForeignKey('nat.id')),
+    Column('user_id', Integer, ForeignKey('user.uuid'))
 )
 
 personal_id = Table(
@@ -80,7 +79,7 @@ personal_id = Table(
     Column('id', Integer, primary_key=True, autoincrement=True),
     Column('name', String),
     Column('value', String),
-    Column('user_id', Integer, ForeignKey('user.id'))
+    Column('user_id', Integer, ForeignKey('user.uuid'))
 )
 
 
@@ -92,14 +91,15 @@ def start_mappers():
     mapper(Coordinates, coordinates, properties={
         'locations': relationship(location_mapper, backref='coordinates')
     })
+    mapper(Nat, nat, properties={
+        'locations': relationship(location_mapper, backref='nat')
+    })
 
     person_mapper = mapper(Person, person)
-    login_info_mapper = mapper(LoginInfo, login_info)
     contact_info_mapper = mapper(ContactInfo, contact_info)
     personal_id_mapper = mapper(PersonalId, personal_id)
     mapper(User, user, properties={
         'person': relationship(person_mapper, backref='user', uselist=False),
-        'login_info': relationship(login_info_mapper, backref='user', uselist=False),
         'contact_info': relationship(contact_info_mapper, backref='user',
                                      uselist=False),
         'location': relationship(location_mapper, backref='user', uselist=False),
