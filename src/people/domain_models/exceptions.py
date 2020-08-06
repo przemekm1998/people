@@ -1,2 +1,0 @@
-class ModelCreationException(Exception):
-    pass
