@@ -1,67 +1,106 @@
-from src.people.domain_models.models import Name, Location, Coordinates, Timezone
+import pytest
+
+from src.people.domain_models.models import User, Person, LoginInfo, ContactInfo, \
+    Timezone, Coordinates, Location, PersonalId
 
 
-def test_name_mapper_can_load_names(session):
-    session.execute(
-        'INSERT INTO "names" (title, first_name, second_name) VALUES '
-        '("Mr", "John", "Doe"),'
-        '("Ms", "Jane", "Doe")'
-    )
-    expected = [
-        Name("Mr", "John", "Doe"),
-        Name("Ms", "Jane", "Doe")
-    ]
-    assert session.query(Name).all() == expected
+@pytest.fixture(scope='function')
+def user_fixture(session):
+    user = User(date_registered='1993-08-01', nat='nat')
+    session.add(user)
+
+    yield user
 
 
-def test_name_mapper_can_save_names(session):
-    new_name = Name("Mr", "John", "Doe")
-    session.add(new_name)
+def test_user_mapper_with_person(session, user_fixture):
+    person = Person('male', 'Mr', 'John', 'Doe', '1993-08-01', user_fixture)
+    session.add(person)
     session.commit()
 
-    rows = list(session.execute('SELECT * FROM "names"'))
-    assert rows == [(1, "Mr", "John", "Doe")]
+    user = session.query(User).one()
+
+    assert user.person.gender == person.gender
+    assert user.person.title == person.title
+    assert user.person.first_name == person.first_name
+    assert user.person.second_name == person.second_name
+    assert user.person.date_of_birth == person.date_of_birth
+    assert user.person.age == person.age
+    assert user.person.date_of_birth == person.date_of_birth
 
 
-def test_location_mapper_can_save_location(session):
-    session.execute(
-        'INSERT INTO "coordinates" (latitude, longitude) VALUES '
-        '(-25.3, 54.78)'
-    )
-    session.execute(
-        'INSERT INTO "timezones" ("offset", description) VALUES '
-        '("-3:30", "Newfoundland")'
-    )
-    session.execute(
-        'INSERT INTO "locations" (street, city, state, postcode, coordinates, '
-        'timezone) VALUES '
-        '("street", "city", "state", "05478", (SELECT id FROM "coordinates" WHERE id '
-        '= 1), (SELECT id FROM "timezones" WHERE id = 1))'
-    )
-
-    expected_location = [Location("street", "city", "state", "05478", 1, 1)]
-    expected_coordinates = [Coordinates(latitude=-25.3, longitude=54.78)]
-    expected_timezone = [Timezone(offset="-3:30", description="Newfoundland")]
-
-    assert session.query(Location).all() == expected_location
-    assert session.query(Timezone).all() == expected_timezone
-    assert session.query(Coordinates).all() == expected_coordinates
-
-
-def test_location_mapper_can_save_locationss(session):
-    new_coordinates = Coordinates(latitude=-25.3, longitude=54.78)
-    new_timezone = Timezone(offset="-3:30", description="Newfoundland")
-    new_location = Location("street", "city", "state", "05478", 1, 1)
-
-    session.add(new_coordinates)
-    session.add(new_timezone)
-    session.add(new_location)
+def test_user_mapper_with_login_info(session, user_fixture):
+    login_info = LoginInfo('uuid', 'username', 'password', 'salt', 'md5', 'sha1',
+                           'sha256', user_fixture)
+    session.add(login_info)
     session.commit()
 
-    locations_rows = list(session.execute('SELECT * FROM "locations"'))
-    timezone_rows = list(session.execute('SELECT * FROM "timezones"'))
-    coordinates_rows = list(session.execute('SELECT * FROM "coordinates"'))
+    user = session.query(User).one()
+    assert user.login_info.uuid == login_info.uuid
+    assert user.login_info.username == login_info.username
+    assert user.login_info.password == login_info.password
+    assert user.login_info.salt == login_info.salt
+    assert user.login_info.md5 == login_info.md5
+    assert user.login_info.sha1 == login_info.sha1
+    assert user.login_info.sha256 == login_info.sha256
+    assert user.login_info.password_strength == login_info.password_strength
 
-    assert locations_rows == [(1, "street", "city", "state", "05478", 1, 1)]
-    assert timezone_rows == [(1, "-3:30", "Newfoundland")]
-    assert coordinates_rows == [(1, -25.3, 54.78)]
+
+def test_user_mapper_with_contact_info(session, user_fixture):
+    contact_info = ContactInfo('512-000-000', '000-000-000', 'mail@mail.com',
+                               user_fixture)
+    session.add(contact_info)
+    session.commit()
+
+    user = session.query(User).one()
+    assert user.contact_info.phone == contact_info.phone
+    assert user.contact_info.cell == contact_info.cell
+    assert user.contact_info.email == contact_info.email
+
+
+def test_location_mapper_with_timezone_and_coordinates(session, user_fixture):
+    timezone = Timezone('-3:30', 'Newfoundland')
+    coordinates = Coordinates(25.4, 25.4)
+    location = Location('street', 'city', 'state', 'postcode', coordinates, timezone,
+                        user_fixture)
+    session.add(timezone)
+    session.add(coordinates)
+    session.add(location)
+    session.commit()
+
+    user = session.query(User).one()
+    assert user.location.street == location.street
+    assert user.location.city == location.city
+    assert user.location.state == location.state
+    assert user.location.postcode == location.postcode
+    assert user.location.coordinates == location.coordinates
+    assert user.location.timezone == location.timezone
+
+
+def test_coordination_mapper_can_have_multiple_locations(session, user_fixture):
+    timezone = Timezone('-3:30', 'Newfoundland')
+    coordinates = Coordinates(25.4, 25.4)
+    location_1 = Location('street', 'city', 'state', 'postcode', coordinates, timezone,
+                          user_fixture)
+    location_2 = Location('street2', 'cit2', 'stat2', 'postcode2', coordinates,
+                          timezone, user_fixture)
+
+    session.add(timezone)
+    session.add(coordinates)
+    session.add(location_1)
+    session.add(location_2)
+    session.commit()
+
+    coordinates = session.query(Coordinates).one()
+    timezone = session.query(Timezone).one()
+    assert coordinates.locations == [location_1, location_2]
+    assert timezone.locations == [location_1, location_2]
+
+
+def test_user_mapper_with_personal_id(session, user_fixture):
+    personal_id = PersonalId('name', 'value', user_fixture)
+    session.add(personal_id)
+    session.commit()
+
+    user = session.query(User).one()
+    assert user.personal_id.name == personal_id.name
+    assert user.personal_id.value == personal_id.value
