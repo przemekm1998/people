@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from src.people.domain_models.models import Person, LoginInfo, ContactInfo
+from src.people.domain_models.models import Person, ContactInfo, User
 
 
 class FakeDate(date):
@@ -14,14 +14,8 @@ class FakeDate(date):
 
 class FakePerson(Person):
 
-    def __init__(self, date_of_birth='1993-07-20'):
-        self.date_of_birth = date.fromisoformat(date_of_birth)
-
-
-class FakeLoginInfo(LoginInfo):
-
-    def __init__(self, password: str):
-        self.password = password
+    def __init__(self, date_of_birth: date):
+        self.date_of_birth = date_of_birth
 
 
 class FakeContactInfo(ContactInfo):
@@ -30,10 +24,16 @@ class FakeContactInfo(ContactInfo):
         self.phone = phone
 
 
+class FakeUser(User):
+
+    def __init__(self, password: str):
+        self.password = password
+
+
 @mock.patch('src.people.domain_models.models.datetime.date', FakeDate)
 @pytest.mark.parametrize('date_1, age', [
-    ('1993-07-20', 27),
-    ('2020-07-20', 0),
+    (date.fromisoformat('1993-07-20'), 27),
+    (date.fromisoformat('2020-07-20'), 0),
 ])
 def test_person_age(date_1, age):
     FakeDate.today = classmethod(lambda cls: date(2020, 7, 31))
@@ -43,9 +43,9 @@ def test_person_age(date_1, age):
 
 @mock.patch('src.people.domain_models.models.datetime.date', FakeDate)
 @pytest.mark.parametrize('date_1, expected_days_to_birthday', [
-    ('1993-08-01', 1),
-    ('1993-07-31', 0),
-    ('1993-07-30', 364),
+    (date.fromisoformat('1993-08-01'), 1),
+    (date.fromisoformat('1993-07-31'), 0),
+    (date.fromisoformat('1993-07-30'), 364),
 ])
 def test_person_days_to_birthday(date_1, expected_days_to_birthday):
     FakeDate.today = classmethod(lambda cls: date(2020, 7, 31))
@@ -60,10 +60,10 @@ def test_person_days_to_birthday(date_1, expected_days_to_birthday):
     ('Ab133785%', 12),  # All rules match
     ('', 0)
 ])
-def test_login_info_password_strength(password, points):
-    login_info = FakeLoginInfo(password=password)
+def test_user_password_strength(password, points):
+    user = FakeUser(password=password)
 
-    assert login_info.password_strength == points
+    assert user.password_strength == points
 
 
 def test_contact_info_remove_dashes_from_phone_number():
