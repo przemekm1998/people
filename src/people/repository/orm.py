@@ -11,7 +11,8 @@ metadata = MetaData()
 
 user = Table(
     'user', metadata,
-    Column('uuid', String, primary_key=True),
+    Column('id', Integer, primary_key=True, autoincrement=True),
+    Column('uuid', String, unique=True),
     Column('username', String(50)),
     Column('password', String),
     Column('salt', String),
@@ -29,7 +30,7 @@ person = Table(
     Column('first_name', String(50)),
     Column('second_name', String(50)),
     Column('date_of_birth', Date),
-    Column('user_uuid', Integer, ForeignKey('user.uuid'))
+    Column('user_id', Integer, ForeignKey('user.id'))
 )
 
 contact_info = Table(
@@ -38,7 +39,7 @@ contact_info = Table(
     Column('phone', String),
     Column('cell', String),
     Column('email', String),
-    Column('user_uuid', Integer, ForeignKey('user.uuid'))
+    Column('user_id', Integer, ForeignKey('user.id'))
 )
 
 timezone = Table(
@@ -71,7 +72,7 @@ location = Table(
     Column('timezone_id', Integer, ForeignKey('timezone.id')),
     Column('coordinates_id', Integer, ForeignKey('coordinates.id')),
     Column('nat_id', Integer, ForeignKey('nat.id')),
-    Column('user_id', Integer, ForeignKey('user.uuid'))
+    Column('user_id', Integer, ForeignKey('user.id'))
 )
 
 personal_id = Table(
@@ -79,7 +80,7 @@ personal_id = Table(
     Column('id', Integer, primary_key=True, autoincrement=True),
     Column('name', String),
     Column('value', String),
-    Column('user_id', Integer, ForeignKey('user.uuid'))
+    Column('user_id', Integer, ForeignKey('user.id'))
 )
 
 
