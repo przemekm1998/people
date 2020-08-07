@@ -28,7 +28,7 @@ class AbstractDbConnection(abc.ABC):
 
 
 DEFAULT_SESSION_FACTORY = sessionmaker(bind=create_engine(
-    'sqlite:///ppl_db'
+    'sqlite:///ppl_db.db'
 ))
 
 
