@@ -1,8 +1,5 @@
-from datetime import date
-
 import pytest
 
-from src.people.domain_models.models import User
 from src.people.service_layer.db_connection import SqlAlchemyDbConnection
 
 

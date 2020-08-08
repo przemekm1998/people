@@ -2,8 +2,7 @@ from datetime import date
 
 import pytest
 
-from src.people.domain_models.models import User, Person, ContactInfo, Timezone, \
-    Coordinates, Nat, Location, PersonalId, LoginInfo
+from src.people.domain_models.models import Person
 from src.people.repository.exceptions import RepositoryException
 from src.people.repository.repository import SqlAlchemyRepository
 
