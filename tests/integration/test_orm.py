@@ -8,6 +8,8 @@ from src.people.domain_models.models import Person, ContactInfo, \
 
 def test_user_mapper(session, user_fixture):
     user = user_fixture
+
+    session.add(user)
     db_user = session.query(User).one()
 
     assert user == db_user
