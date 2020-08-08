@@ -17,10 +17,6 @@ class AbstractRepository(abc.ABC):
     def get(self, model, model_id: str):
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def list(self, model):
-        raise NotImplementedError
-
 
 class SqlAlchemyRepository(AbstractRepository):
     """ Repository based on SqlAlchemy orm """
@@ -46,15 +42,6 @@ class SqlAlchemyRepository(AbstractRepository):
         """
 
         return self.session.query(model).filter_by(id=model_id).one()
-
-    def list(self, model):
-        """
-        List all objects of given model
-        :param model: Model type of objects to be retrieved
-        :return:
-        """
-
-        return self.session.query(model).all()
 
     def group_by_and_count(self, model, column, limit: int = None,
                            descending: bool = True):

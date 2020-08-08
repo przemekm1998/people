@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from src.people.domain_models.models import Person, ContactInfo, User
+from src.people.domain_models.models import Person, ContactInfo, LoginInfo
 
 
 class FakeDate(date):
@@ -24,7 +24,7 @@ class FakeContactInfo(ContactInfo):
         self.phone = phone
 
 
-class FakeUser(User):
+class FakeLoginInfo(LoginInfo):
 
     def __init__(self, password: str):
         self.password = password
@@ -60,8 +60,8 @@ def test_person_days_to_birthday(date_1, expected_days_to_birthday):
     ('Ab133785%', 12),  # All rules match
     ('', 0)
 ])
-def test_user_password_strength(password, points):
-    user = FakeUser(password=password)
+def test_login_info_password_strength(password, points):
+    user = FakeLoginInfo(password=password)
 
     assert user.password_strength == points
 

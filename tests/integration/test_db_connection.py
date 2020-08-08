@@ -1,14 +1,10 @@
-from datetime import date
-
 import pytest
 
-from src.people.domain_models.models import User
 from src.people.service_layer.db_connection import SqlAlchemyDbConnection
 
 
-def try_to_add_user(session):
-    user = User('uuid', 'username', 'password', 'salt', 'md5',
-                'sha1', 'sha256', date.fromisoformat('1997-01-01'))
+def try_to_add_user(session, user_fixture):
+    user = user_fixture
 
     with SqlAlchemyDbConnection() as conn:
         conn.database.add(user)
@@ -21,12 +17,11 @@ def try_to_add_user(session):
     assert db_user == user
 
 
-def test_db_connection_rollback_on_error(session):
+def test_db_connection_rollback_on_error(session, user_fixture):
     class MyException(Exception):
         pass
 
-    user = User('uuid', 'username', 'password', 'salt', 'md5',
-                'sha1', 'sha256', date.fromisoformat('1997-01-01'))
+    user = user_fixture
 
     with pytest.raises(MyException):
         with SqlAlchemyDbConnection() as conn:
