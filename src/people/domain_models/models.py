@@ -6,64 +6,25 @@ from dataclasses import dataclass
 from typing import Dict, Any
 
 
+@dataclass
 class User:
-    """ Composition of data needed for single user """
-
-    REGEX_RULES = (
-        dict(rule='[a-z]+', points=1),  # At least one smaller-case letter
-        dict(rule='[A-Z]+', points=2),  # At least one upper-case letter
-        dict(rule='[0-9]+', points=1),  # At least one number
-        dict(rule='.{8,}', points=5),  # At least 8 characters
-        dict(rule='[!@#$%^&*(),.?\":{}|<>]', points=3)  # At least one special char
-    )
-
-    def __init__(self, uuid: str, username: str, password: str, salt: str, md5: str,
-                 sha1: str, sha256: str, date_registered: datetime.date):
-        self.uuid = uuid
-        self.username = username
-        self.password = password
-        self.salt = salt
-        self.md5 = md5
-        self.sha1 = sha1
-        self.sha256 = sha256
-        self.date_registered = date_registered
-
-    @property
-    def password_strength(self) -> int:
-        """ Calculate password strength """
-
-        strength = 0
-
-        for pattern in self.REGEX_RULES:
-            strength += self._give_points_if_password_matches_regex(pattern)
-
-        return strength
-
-    def _give_points_if_password_matches_regex(self, pattern: Dict[str, Any]) -> int:
-        """
-        Checking if password matches given regex expression
-        :param pattern: Regex pattern to check
-        :return: 0 if no match or points for a given rule if regex rule match password
-        """
-
-        regex_expression = re.compile(pattern['rule'])
-        if regex_expression.search(self.password):
-            return pattern['points']
-        else:
-            return 0
+    person: 'Person'
+    location: 'Location'
+    login_info: 'LoginInfo'
+    contact_info: 'ContactInfo'
+    personal_id: 'PersonalId'
 
 
 class Person:
     """ Class to keep track of every person info """
 
     def __init__(self, gender: str, title: str, first_name: str, second_name: str,
-                 date_of_birth: datetime.date, user: 'User'):
+                 date_of_birth: datetime.date):
         self.gender = gender
         self.title = title
         self.first_name = first_name
         self.second_name = second_name
         self.date_of_birth = date_of_birth
-        self.user = user
 
     @property
     def age(self) -> int:
@@ -112,14 +73,60 @@ class Person:
         )
 
 
+class LoginInfo:
+    """ Composition of data needed for single user """
+
+    REGEX_RULES = (
+        dict(rule='[a-z]+', points=1),  # At least one smaller-case letter
+        dict(rule='[A-Z]+', points=2),  # At least one upper-case letter
+        dict(rule='[0-9]+', points=1),  # At least one number
+        dict(rule='.{8,}', points=5),  # At least 8 characters
+        dict(rule='[!@#$%^&*(),.?\":{}|<>]', points=3)  # At least one special char
+    )
+
+    def __init__(self, uuid: str, username: str, password: str, salt: str, md5: str,
+                 sha1: str, sha256: str, date_registered: datetime.date):
+        self.uuid = uuid
+        self.username = username
+        self.password = password
+        self.salt = salt
+        self.md5 = md5
+        self.sha1 = sha1
+        self.sha256 = sha256
+        self.date_registered = date_registered
+
+    @property
+    def password_strength(self) -> int:
+        """ Calculate password strength """
+
+        strength = 0
+
+        for pattern in self.REGEX_RULES:
+            strength += self._give_points_if_password_matches_regex(pattern)
+
+        return strength
+
+    def _give_points_if_password_matches_regex(self, pattern: Dict[str, Any]) -> int:
+        """
+        Checking if password matches given regex expression
+        :param pattern: Regex pattern to check
+        :return: 0 if no match or points for a given rule if regex rule match password
+        """
+
+        regex_expression = re.compile(pattern['rule'])
+        if regex_expression.search(self.password):
+            return pattern['points']
+        else:
+            return 0
+
+
 class ContactInfo:
     """ Class to store contact information """
 
-    def __init__(self, phone: str, cell: str, email: str, user: 'User'):
+    def __init__(self, phone: str, cell: str, email: str):
         self.phone = phone
         self.cell = cell
         self.email = email
-        self.user = user
 
     @property
     def phone(self) -> str:
@@ -154,7 +161,6 @@ class Location:
     coordinates: 'Coordinates'
     timezone: 'Timezone'
     nat: 'Nat'
-    user: 'User'
 
 
 @dataclass
@@ -179,7 +185,6 @@ class PersonalId:
 
     name: str
     value: str
-    user: 'User'
 
 
 @dataclass()
