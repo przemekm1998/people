@@ -32,8 +32,8 @@ def populated_db_fixture(session):
     insert_person(session, 'female', 'ms', 'jane', 'smith', '1999-01-01')
 
 
-def test_repository_can_save_user(session, user_fixture):
-    user = user_fixture
+def test_repository_can_save_user(session, user_factory_fixture):
+    user = user_factory_fixture()
 
     repo = SqlAlchemyRepository(session)
     repo.add(user)
